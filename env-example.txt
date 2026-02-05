@@ -1,0 +1,32 @@
+# ===========================================
+# SamIT Global - Environment Configuration
+# ===========================================
+# Скопируйте этот файл в .env и заполните значениями
+
+# -----------------------------------
+# TELEGRAM BOT SETTINGS
+# -----------------------------------
+# Получите токен бота у @BotFather в Telegram
+TELEGRAM_BOT_TOKEN=1234567890:ABCdefGHIjklMNOpqrsTUVwxyz123456789
+
+# -----------------------------------
+# DATABASE SETTINGS (MySQL)
+# -----------------------------------
+MYSQL_HOST=localhost
+MYSQL_USER=root
+MYSQL_PASSWORD=your_mysql_password
+MYSQL_DATABASE=samit_global
+MYSQL_PORT=3306
+
+# -----------------------------------
+# APPLICATION SETTINGS
+# -----------------------------------
+SECRET_KEY=your-super-secret-key-change-in-production-32-chars-min
+WEBAPP_URL=https://your-domain.com
+LOG_LEVEL=INFO
+LOGS_GROUP_ID=0
+
+# -----------------------------------
+# DEVELOPMENT SETTINGS
+# -----------------------------------
+DEBUG=true

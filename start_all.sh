@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# SamIT Global - Запуск всех компонентов системы
+echo "🚀 Запуск SamIT Global системы..."
+
+# Проверка наличия .env файла
+if [ ! -f .env ]; then
+    echo "❌ Файл .env не найден!"
+    echo "📝 Скопируйте env-example.txt в .env и заполните настройки"
+    exit 1
+fi
+
+# Проверка Python зависимостей
+echo "📦 Проверка зависимостей..."
+if ! python -c "import fastapi, sqlalchemy, aiogram" 2>/dev/null; then
+    echo "❌ Python зависимости не установлены!"
+    echo "📝 Запустите: pip install -r requirements.txt"
+    exit 1
+fi
+
+echo "✅ Зависимости установлены"
+
+# Запуск Backend (FastAPI)
+echo "🔧 Запуск Backend API..."
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+BACKEND_PID=$!
+echo "✅ Backend запущен (PID: $BACKEND_PID)"
+
+# Ожидание запуска backend
+sleep 3
+
+# Запуск бота в фоне
+echo "🤖 Запуск Telegram Bot..."
+python run_bot.py &
+BOT_PID=$!
+echo "✅ Bot запущен (PID: $BOT_PID)"
+
+# Информация о запуске
+echo ""
+echo "🎉 Система SamIT Global запущена!"
+echo ""
+echo "📊 Доступ:"
+echo "   • API: http://localhost:8000"
+echo "   • Docs: http://localhost:8000/docs"
+echo "   • Bot: работает в Telegram"
+echo ""
+echo "🛑 Для остановки нажмите Ctrl+C"
+
+# Функция очистки при выходе
+cleanup() {
+    echo ""
+    echo "🛑 Остановка системы..."
+    kill $BACKEND_PID 2>/dev/null
+    kill $BOT_PID 2>/dev/null
+    echo "✅ Система остановлена"
+    exit 0
+}
+
+# Обработка сигналов
+trap cleanup SIGINT SIGTERM
+
+# Ожидание
+wait
