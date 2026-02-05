@@ -46,7 +46,7 @@ class GradeResponse(GradeBase):
     type_display: Optional[str] = None  # Computed field
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class GradeWithStudent(GradeResponse):

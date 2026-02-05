@@ -5,7 +5,7 @@ No interactive commands - all functionality is in the Mini App.
 """
 import logging
 from aiogram import Bot, Dispatcher
-from aiogram.contrib.fsm_storage.memory import MemoryStorage
+from aiogram.fsm.storage.memory import MemoryStorage
 
 from data.config import botTOKEN
 

@@ -11,14 +11,30 @@ if [ ! -f .env ]; then
 fi
 
 # Проверка Python зависимостей
-echo "📦 Проверка зависимостей..."
+echo "📦 Проверка Python зависимостей..."
 if ! python -c "import fastapi, sqlalchemy, aiogram" 2>/dev/null; then
     echo "❌ Python зависимости не установлены!"
     echo "📝 Запустите: pip install -r requirements.txt"
     exit 1
 fi
 
-echo "✅ Зависимости установлены"
+echo "✅ Python зависимости установлены"
+
+# Сборка frontend если нужно
+if [ ! -d "app/static" ] || [ ! -f "app/static/index.html" ]; then
+    echo "📦 Сборка frontend для Mini App..."
+    cd frontend
+    if command -v npm &> /dev/null; then
+        npm install
+        npm run build
+        cd ..
+        mkdir -p app/static
+        cp -r frontend/build/* app/static/
+        echo "✅ Frontend собран успешно"
+    else
+        echo "⚠️ npm не найден, frontend не собран"
+    fi
+fi
 
 # Запуск Backend (FastAPI)
 echo "🔧 Запуск Backend API..."

@@ -46,7 +46,7 @@ class StudentResponse(StudentBase):
     attendance_percentage: Optional[float] = None  # Computed field
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class StudentWithParent(StudentResponse):

@@ -35,7 +35,7 @@ class AttendanceResponse(AttendanceBase):
     status_display: Optional[str] = None  # Computed field
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class AttendanceWithStudent(AttendanceResponse):

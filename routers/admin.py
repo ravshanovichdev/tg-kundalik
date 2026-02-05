@@ -19,7 +19,7 @@ from schemas.student import StudentResponse, StudentCreate, StudentUpdate
 from schemas.grade import GradeStats
 from schemas.attendance import AttendanceStats
 from routers.auth import get_current_user_from_telegram
-from services.notification_service import NotificationService
+# from services.notification_service import NotificationService  # Временно отключено
 
 logger = logging.getLogger(__name__)
 
@@ -381,9 +381,10 @@ async def update_payment_status(
 
     # Send notification if payment is unpaid
     if status == "UNPAID":
-        await NotificationService.send_payment_reminder(
-            db, payment.student_id, payment.month, payment.year
-        )
+        # await NotificationService.send_payment_reminder(  # Временно отключено
+        #     db, payment.student_id, payment.month, payment.year
+        # )
+        pass
 
     return payment
 

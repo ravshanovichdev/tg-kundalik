@@ -1,0 +1,13 @@
+FAVICON PLACEHOLDER
+
+Для продакшена создайте favicon.ico файл и замените этот файл.
+
+Рекомендуемые размеры:
+- 16x16 px
+- 32x32 px
+- 48x48 px
+
+Инструменты для создания:
+- https://favicon.io/
+- https://www.favicon-generator.org/
+- Photoshop или GIMP

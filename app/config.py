@@ -2,7 +2,8 @@
 Application configuration for SamIT Global educational system.
 Centralized configuration management using Pydantic settings.
 """
-from pydantic import BaseSettings, validator
+from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import Optional
 import os
 from dotenv import load_dotenv
@@ -44,12 +45,13 @@ class Settings(BaseSettings):
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
     logs_group_id: int = int(os.getenv("LOGS_GROUP_ID", "0"))
 
-    @validator("telegram_bot_username", pre=True, always=True)
-    def set_bot_username(cls, v, values):
+    @field_validator("telegram_bot_username", mode="before")
+    @classmethod
+    def set_bot_username(cls, v, info):
         """Extract bot username from token if not provided"""
         if v:
             return v
-        token = values.get("telegram_bot_token", "")
+        token = info.data.get("telegram_bot_token", "")
         if token and "@" in token:
             return token.split("@")[1]
         return None

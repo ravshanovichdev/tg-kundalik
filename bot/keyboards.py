@@ -14,7 +14,7 @@ def get_welcome_keyboard() -> InlineKeyboardMarkup:
     keyboard.add(
         InlineKeyboardButton(
             text="🚀 Открыть приложение",
-            url="https://t.me/YOUR_BOT_USERNAME/app"  # Replace with actual Mini App URL
+            web_app={"url": "https://your-mini-app-domain.com"}  # Replace with your actual domain
         )
     )
     return keyboard
@@ -28,7 +28,7 @@ def get_notification_keyboard() -> InlineKeyboardMarkup:
     keyboard.add(
         InlineKeyboardButton(
             text="📱 Открыть приложение",
-            url="https://t.me/YOUR_BOT_USERNAME/app"  # Replace with actual Mini App URL
+            web_app={"url": "https://your-mini-app-domain.com"}  # Replace with your actual domain
         )
     )
     return keyboard
@@ -42,7 +42,7 @@ def get_help_keyboard() -> InlineKeyboardMarkup:
     keyboard.add(
         InlineKeyboardButton(
             text="🚀 Приложение",
-            url="https://t.me/YOUR_BOT_USERNAME/app"
+            web_app={"url": "https://your-mini-app-domain.com"}  # Replace with your actual domain
         ),
         InlineKeyboardButton(
             text="📞 Поддержка",
