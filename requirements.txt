@@ -13,6 +13,7 @@ aiogram
 # Utilities
 python-dotenv
 python-multipart
+pydantic-settings
 
 # Optional: for better performance
 gunicorn

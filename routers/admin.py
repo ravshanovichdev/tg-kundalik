@@ -14,8 +14,11 @@ from models.student import Student
 from models.teacher import Teacher
 from models.group import Group
 from models.payment import Payment
-from schemas.user import UserResponse, UserUpdate, UserStats
+from models.schedule import Schedule
+from schemas.user import UserResponse, UserUpdate, UserStats, UserCreate
 from schemas.student import StudentResponse, StudentCreate, StudentUpdate
+from schemas.teacher import TeacherResponse, TeacherCreate, TeacherUpdate
+from schemas.schedule import ScheduleResponse, ScheduleCreate, ScheduleUpdate
 from schemas.grade import GradeStats
 from schemas.attendance import AttendanceStats
 from routers.auth import get_current_user_from_telegram
@@ -243,6 +246,191 @@ async def update_student(
     return student
 
 
+# ===== TEACHER MANAGEMENT =====
+
+@router.post("/teachers", response_model=TeacherResponse)
+async def create_teacher(
+    teacher_data: TeacherCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Create new teacher with user account"""
+    # Verify user exists
+    user = db.query(User).filter(User.id == teacher_data.user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.role != "teacher":
+        raise HTTPException(status_code=400, detail="User must have teacher role")
+    
+    # Check if teacher profile already exists
+    existing_teacher = db.query(Teacher).filter(Teacher.user_id == teacher_data.user_id).first()
+    if existing_teacher:
+        raise HTTPException(status_code=400, detail="Teacher profile already exists for this user")
+    
+    # Create teacher profile
+    teacher = Teacher(
+        user_id=teacher_data.user_id,
+        first_name=teacher_data.first_name,
+        last_name=teacher_data.last_name,
+        phone=teacher_data.phone,
+        email=teacher_data.email,
+        specialization=teacher_data.specialization,
+        experience_years=teacher_data.experience_years,
+        bio=teacher_data.bio
+    )
+    
+    db.add(teacher)
+    db.commit()
+    db.refresh(teacher)
+    
+    return teacher
+
+
+@router.post("/teachers/with-user", response_model=TeacherResponse)
+async def create_teacher_with_user(
+    telegram_id: int,
+    username: Optional[str],
+    full_name: Optional[str],
+    first_name: str,
+    last_name: str,
+    phone: Optional[str] = None,
+    email: Optional[str] = None,
+    specialization: Optional[str] = None,
+    experience_years: int = 0,
+    bio: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Create teacher with new user account"""
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.telegram_id == telegram_id).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this telegram_id already exists")
+    
+    # Create user
+    user = User(
+        telegram_id=telegram_id,
+        username=username,
+        full_name=full_name,
+        role="teacher",
+        is_active=True
+    )
+    db.add(user)
+    db.flush()  # Get user.id without committing
+    
+    # Create teacher profile
+    teacher = Teacher(
+        user_id=user.id,
+        first_name=first_name,
+        last_name=last_name,
+        phone=phone,
+        email=email,
+        specialization=specialization,
+        experience_years=experience_years,
+        bio=bio
+    )
+    
+    db.add(teacher)
+    db.commit()
+    db.refresh(teacher)
+    
+    return teacher
+
+
+@router.get("/teachers", response_model=List[TeacherResponse])
+async def get_teachers(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Get list of teachers"""
+    teachers = db.query(Teacher).offset(skip).limit(limit).all()
+    return teachers
+
+
+@router.get("/teachers/{teacher_id}", response_model=TeacherResponse)
+async def get_teacher(
+    teacher_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Get specific teacher by ID"""
+    teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    return teacher
+
+
+@router.put("/teachers/{teacher_id}", response_model=TeacherResponse)
+async def update_teacher(
+    teacher_id: int,
+    teacher_update: TeacherUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Update teacher information"""
+    teacher = db.query(Teacher).filter(Teacher.id == teacher_id).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    
+    # Update fields
+    for field, value in teacher_update.dict(exclude_unset=True).items():
+        setattr(teacher, field, value)
+    
+    teacher.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(teacher)
+    
+    return teacher
+
+
+# ===== PARENT MANAGEMENT =====
+
+@router.post("/parents", response_model=UserResponse)
+async def create_parent(
+    telegram_id: int,
+    username: Optional[str] = None,
+    full_name: Optional[str] = None,
+    phone: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Create new parent user"""
+    # Check if user already exists
+    existing_user = db.query(User).filter(User.telegram_id == telegram_id).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="User with this telegram_id already exists")
+    
+    # Create parent user
+    user = User(
+        telegram_id=telegram_id,
+        username=username,
+        full_name=full_name,
+        role="parent",
+        is_active=True
+    )
+    
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    return user
+
+
+@router.get("/parents", response_model=List[UserResponse])
+async def get_parents(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Get list of parents"""
+    parents = db.query(User).filter(User.role == "parent").offset(skip).limit(limit).all()
+    return parents
+
+
 # ===== GROUP MANAGEMENT =====
 
 @router.post("/groups")
@@ -322,6 +510,106 @@ async def update_group(
     db.refresh(group)
 
     return group
+
+
+# ===== SCHEDULE MANAGEMENT =====
+
+@router.post("/schedules", response_model=ScheduleResponse)
+async def create_schedule(
+    schedule_data: ScheduleCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Create new schedule entry"""
+    # Verify group exists
+    group = db.query(Group).filter(Group.id == schedule_data.group_id).first()
+    if not group:
+        raise HTTPException(status_code=404, detail="Group not found")
+    
+    # Verify teacher exists
+    teacher = db.query(Teacher).filter(Teacher.id == schedule_data.teacher_id).first()
+    if not teacher:
+        raise HTTPException(status_code=404, detail="Teacher not found")
+    
+    # Create schedule
+    schedule = Schedule(**schedule_data.dict())
+    db.add(schedule)
+    db.commit()
+    db.refresh(schedule)
+    
+    return schedule
+
+
+@router.get("/schedules", response_model=List[ScheduleResponse])
+async def get_schedules(
+    group_id: Optional[int] = None,
+    teacher_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Get list of schedules"""
+    query = db.query(Schedule)
+    
+    if group_id:
+        query = query.filter(Schedule.group_id == group_id)
+    if teacher_id:
+        query = query.filter(Schedule.teacher_id == teacher_id)
+    
+    schedules = query.all()
+    return schedules
+
+
+@router.get("/schedules/{schedule_id}", response_model=ScheduleResponse)
+async def get_schedule(
+    schedule_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Get specific schedule by ID"""
+    schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    return schedule
+
+
+@router.put("/schedules/{schedule_id}", response_model=ScheduleResponse)
+async def update_schedule(
+    schedule_id: int,
+    schedule_update: ScheduleUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Update schedule information"""
+    schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    
+    # Update fields
+    for field, value in schedule_update.dict(exclude_unset=True).items():
+        setattr(schedule, field, value)
+    
+    schedule.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(schedule)
+    
+    return schedule
+
+
+@router.delete("/schedules/{schedule_id}")
+async def delete_schedule(
+    schedule_id: int,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin)
+):
+    """Delete schedule entry"""
+    schedule = db.query(Schedule).filter(Schedule.id == schedule_id).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    
+    db.delete(schedule)
+    db.commit()
+    
+    return {"message": "Schedule deleted successfully"}
 
 
 # ===== PAYMENT MANAGEMENT =====
